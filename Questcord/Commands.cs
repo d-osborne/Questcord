@@ -23,28 +23,42 @@ public class CommandModule : ApplicationCommandModule<ApplicationCommandContext>
         ulong thread; bool old = false;
 
         /* Let's see if we have a thread already. */
-        ServerEntry entry = Data.GetEntry(Context.Guild!.Id);
-        if (entry.threads.ContainsKey(Context.User.Id))
+        ServerEntry serverEntry = Data.GetEntry(Context.Guild!.Id);
+        UserEntry userEntry = Data.GetUserEntry(Context.Guild!.Id, Context.User.Id);
+
+        if (userEntry.threadId != 0)
         {
             /* We have one! */
-            thread = entry.threads[Context.User.Id]; old = true;
+            thread = userEntry.threadId; old = true;
         } else
         {
             /* Create a new thread. */
             GuildThreadProperties properties = new GuildThreadProperties(Context.User.Username);
-            GuildThread newThread = await Context.Client.Rest.CreateGuildThreadAsync(entry.channelId, properties);
+            GuildThread newThread = await Context.Client.Rest.CreateGuildThreadAsync(serverEntry.channelId, properties);
 
             thread = newThread.Id;
-            entry.threads[Context.User.Id] = thread;
+            userEntry.threadId = thread;
         }
 
         Data.Save();
 
         /* Send a welcome message. */
+        string roomDescription = Game.GetRoomDescription(Context.Guild!.Id, Context.User.Id);
+
         MessageProperties msgProps = new MessageProperties();
-        msgProps.Content = $"Welcome {((old == true) ? "back " : "")}to Questcord, <@{Context.User.Id}>!";
+        msgProps.Content = $"Welcome {((old == true) ? "back " : "")}to Questcord, <@{Context.User.Id}>!\nType **/look** to look around.\n\n{Game.VisitRoom(Context.Guild!.Id, Context.User.Id, Game.GetCurrentRoom(Context.Guild!.Id, Context.User.Id))}";
         await Context.Client.Rest.SendMessageAsync(thread, msgProps);
 
         return $"Go to your thread to play!";
+    }
+
+    /* Now, the actual game commands. */
+    [SlashCommand("look", "Look around the current room.")]
+    public string GameLook()
+    {
+        UserEntry userEntry = Data.GetUserEntry(Context.Guild!.Id, Context.User.Id);
+        if(Context.Channel.Id != userEntry.threadId) throw new Exception("Game commands should be run within your personal thread.");
+
+        return Game.GetRoomDescription(Context.Guild!.Id, Context.User.Id);
     }
 }

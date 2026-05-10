@@ -1,0 +1,31 @@
+{
+    "rooms": [
+        {
+            "name": "Your Office",
+            "description": "Your office sits, dark and foreboding. Waiting. You've spent every day of your three years at the company working in it, but now it feels bizarrely alien, as if everything had been flipped in a mirror. It's not an extremely pleasant sensation.",
+            "firstDescription": "You awaken with a groan, slumped on the plastic of your desk. Your head burns. Your hair's a mess. Your memory of the preceding moment feels distant, unreachable, like the last drop in a spent bottle. The room is dark. A stalwart digital clock, glowing in amber on the wall, continues to blink with the text '09:17:14'. Trapped in a moment that'll never pass.",
+            "visited": false,
+            "interactables": [
+                {
+                    "id": "idcard",
+                    "name": "ID Card",
+                    "type": 1,
+                    "state": 0,
+
+                    "abbrDescriptions": [
+                        "An ID card lays on the table, bearing a mildly faded photograph. That's your picture. Right?"
+                    ],
+                    "descriptions": [
+                        "The ID card bears the name Kayleigh Dumont. It's your ID card."
+                    ],
+                    "interactText": [
+                        "You pick up the ID card. It'll probably be useful. These things generally are."
+                    ],
+                    "interactTransitions": [], "itemText": {}, "itemTransitions": {}, "exitUsable": []
+                }
+            ]
+        }
+    ],
+    "currentRoom": 0,
+    "currentItems": {}
+}
