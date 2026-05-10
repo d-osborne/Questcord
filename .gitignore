@@ -1,0 +1,6 @@
+Questcord/bin/**
+Questcord/bin
+Questcord/obj/**
+Questcord/obj
+Questcord/VERY_IMPORTANT.txt
+Questcord/data.json

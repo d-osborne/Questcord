@@ -1,3 +1,4 @@
+using System.Net;
 using System.Net.Http.Headers;
 using NetCord;
 using NetCord.Rest;
@@ -5,6 +6,24 @@ using NetCord.Services.ApplicationCommands;
 
 public class CommandModule : ApplicationCommandModule<ApplicationCommandContext>
 {
+    private class CollectAutocompleteProvider : IAutocompleteProvider<AutocompleteInteractionContext>
+    {
+        public ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?> GetChoicesAsync(ApplicationCommandInteractionDataOption option, AutocompleteInteractionContext context)
+        {
+            IEnumerable<ApplicationCommandOptionChoiceProperties> choices = new ApplicationCommandOptionChoiceProperties[0];
+
+            /* Show all the items in the room. */
+            IEnumerable<Interactable> items = Game.GetRoomItems(context.Interaction.Guild!.Id, context.Interaction.User.Id);
+            foreach(Interactable item in items)
+            {
+                ApplicationCommandOptionChoiceProperties newProps = new ApplicationCommandOptionChoiceProperties(item.name, item.id);
+                choices = choices.Append(newProps);
+            }
+
+            return new ValueTask<IEnumerable<ApplicationCommandOptionChoiceProperties>?>(choices);
+        }
+    }
+
     [SlashCommand("init", "Initialise the bot with a channel to create threads under.")]
     public string ChannelInit(Channel channel)
     {
@@ -46,7 +65,7 @@ public class CommandModule : ApplicationCommandModule<ApplicationCommandContext>
         string roomDescription = Game.GetRoomDescription(Context.Guild!.Id, Context.User.Id);
 
         MessageProperties msgProps = new MessageProperties();
-        msgProps.Content = $"Welcome {((old == true) ? "back " : "")}to Questcord, <@{Context.User.Id}>!\nType **/look** to look around.\n\n{Game.VisitRoom(Context.Guild!.Id, Context.User.Id, Game.GetCurrentRoom(Context.Guild!.Id, Context.User.Id))}";
+        msgProps.Content = $"Welcome {((old == true) ? "back " : "")}to Questcord, <@{Context.User.Id}>!\nType **/look** to look around and /items to view your inventory.\n\n{Game.VisitRoom(Context.Guild!.Id, Context.User.Id, Game.GetCurrentRoom(Context.Guild!.Id, Context.User.Id))}";
         await Context.Client.Rest.SendMessageAsync(thread, msgProps);
 
         return $"Go to your thread to play!";
@@ -60,5 +79,13 @@ public class CommandModule : ApplicationCommandModule<ApplicationCommandContext>
         if(Context.Channel.Id != userEntry.threadId) throw new Exception("Game commands should be run within your personal thread.");
 
         return Game.GetRoomDescription(Context.Guild!.Id, Context.User.Id);
+    }
+
+
+
+    [SlashCommand("collect", "Pick up an item.")]
+    public string GameCollect([SlashCommandParameter(AutocompleteProviderType = typeof(CollectAutocompleteProvider))] string item)
+    {
+        return Game.CollectItem(Context.Guild!.Id, Context.User.Id, item);
     }
 }

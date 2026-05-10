@@ -62,10 +62,16 @@ public static class Game
 
         if(room.interactables.Length != 0)
         {
-            description += "\n\n";
+            description += "\n";
             foreach(Interactable interactable in room.interactables)
             {
-                description += interactable.abbrDescriptions[interactable.state] + " ";
+                string interactableType = "";
+
+                if(interactable.type == InteractableType.Exit) interactableType = "Path";
+                if(interactable.type == InteractableType.Item) interactableType = "Item";
+                if(interactable.type == InteractableType.Interact) interactableType = "Interactable";
+
+                description += $"\n- _[{interactableType}]_ " + interactable.abbrDescriptions[interactable.state];
             }
         }
 
@@ -92,5 +98,67 @@ public static class Game
     {
         UserEntry entry = Data.GetUserEntry(serverId, userId);
         return entry.state.currentRoom;
+    }
+
+    public static IEnumerable<Interactable> GetRoomItems(ulong serverId, ulong userId)
+    {
+        IEnumerable<Interactable> items = new Interactable[0];
+
+        UserEntry entry = Data.GetUserEntry(serverId, userId);
+        Room room = entry.state.rooms[entry.state.currentRoom];
+
+        foreach(Interactable inter in room.interactables)
+        {
+            if(inter.type == InteractableType.Item) items = items.Append(inter);
+        }
+
+        return items;
+    }
+
+    public static string CollectItem(ulong serverId, ulong userId, string item)
+    {
+        UserEntry entry = Data.GetUserEntry(serverId, userId);
+        Room room = entry.state.rooms[entry.state.currentRoom];
+
+        int i = 0;
+        foreach(Interactable inter in room.interactables)
+        {
+            if(inter.id == item)
+            {
+                /* Bingo! */
+                if(inter.type == InteractableType.Item)
+                {
+                    /* Add it to the inventory. */
+                    entry.state.currentItems[item] = inter;
+
+                    List<Interactable> newInters = new List<Interactable>(room.interactables);
+                    newInters.RemoveAt(i);
+                    room.interactables = newInters.ToArray();
+
+                    return inter.interactText[inter.state];
+                } else
+                {
+                    return "You really think you can pick that up?";
+                }
+            }
+            i++;
+        }
+
+        return "You try but fail to find such an item.";
+    }
+
+    public static string DescribeInventory(ulong serverId, ulong userId)
+    {
+        UserEntry entry = Data.GetUserEntry(serverId, userId);
+        if(entry.state.currentItems.Keys.Count == 0) return "You have nothing. No property to your name. Think about fixing that.";
+
+        string result = "";
+
+        foreach(Interactable inter in entry.state.currentItems.Values)
+        {
+            result += $"\n- **{inter.name}** - {inter.descriptions}";
+        }
+
+        return result;
     }
 }

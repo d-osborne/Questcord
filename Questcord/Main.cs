@@ -17,24 +17,28 @@ GatewayClient client = new GatewayClient(token, new GatewayClientConfiguration
         Logger = new ConsoleLogger(),
     });
 
-/* Add the init command. */
-ApplicationCommandService<ApplicationCommandContext> applicationCommandService = new();
+/* Add the commands. */
+ApplicationCommandService<ApplicationCommandContext, AutocompleteInteractionContext> applicationCommandService = new();
 applicationCommandService.AddModules(typeof(Program).Assembly);
-//applicationCommandService.AddSlashCommand(new SlashCommandBuilder("init", "Initialise the bot with a channel to create threads under.", (Channel channel) => "Registered " + channel.Id.ToString() + " as the channel."));
-/*MessageProperties message = "Hello, world!";
-await client.Rest.SendMessageAsync(1502745018383863819, message);*/
 
-/* Handle the init command. */
+/* Handle the commands. */
 client.InteractionCreate += async interaction =>
 {
-    if(interaction is not ApplicationCommandInteraction applicationCommandInteraction)
-        return;
+    if(interaction is not ApplicationCommandInteraction applicationCommandInteraction){
+        if(interaction is AutocompleteInteraction autocompleteInteraction)
+        {
+            var autoResult = await applicationCommandService.ExecuteAutocompleteAsync(new AutocompleteInteractionContext(autocompleteInteraction, client));
+            if(autoResult is not IFailResult autoFailResult)
+                return;
+            
+            await interaction.SendResponseAsync(InteractionCallback.Message(autoFailResult.Message));
+            return;
+        }
+        else return;
+    };
     
     var result = await applicationCommandService.ExecuteAsync(new ApplicationCommandContext(applicationCommandInteraction, client));
 
-    /* Get the entry for the server. */
-    
-    
     if(result is not IFailResult failResult)
         return;
     
